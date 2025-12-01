@@ -19,7 +19,7 @@ st.caption("Version 1.0 — Prototype pour décision stratégique Verkor / IFP S
 # ---------------------------------------------------------
 # SIDEBAR - NAVIGATION
 # ---------------------------------------------------------
-st.sidebar.title("📌 Navigation")
+st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
     "Aller à :",
