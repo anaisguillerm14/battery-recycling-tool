@@ -7,14 +7,13 @@ import numpy as np
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="EU pCAM Decision Tool",
-    page_icon="🔋",
     layout="wide"
 )
 
 # ---------------------------------------------------------
 # TITRE PRINCIPAL
 # ---------------------------------------------------------
-st.title("🔋 European pCAM Reshoring Decision Tool")
+st.title("European pCAM Reshoring Decision Tool")
 st.caption("Version 1.0 — Prototype pour décision stratégique Verkor / IFP School")
 
 # ---------------------------------------------------------
@@ -25,12 +24,12 @@ st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio(
     "Aller à :",
     [
-        "🏠 Accueil",
-        "📦 Scénarios",
-        "⚙️ Paramètres techniques",
-        "💰 Analyse économique",
-        "📊 Résultats & Recommandation",
-        "🧩 Conclusion"
+        "ACCUEIL",
+        "SCÉNARIOS",
+        "PARAMÈTRES TECHNIQUES",
+        "ANALYSE ÉCONOMIQUE",
+        "RÉSULTATS & RECOMMENDATIONS",
+        "CONCLUSION"
     ]
 )
 
@@ -38,7 +37,7 @@ page = st.sidebar.radio(
 # VARIABLES GLOBALES — Tout regrouper ici
 # ---------------------------------------------------------
 
-st.sidebar.title("🔧 Paramètres rapides")
+st.sidebar.title("PARAMÈTRES RAPIDES")
 
 # Nombre de batteries recyclées
 batteries = st.sidebar.number_input(
@@ -127,8 +126,8 @@ def recommendation(value, costs):
 # ---------------------------------------------------------
 # PAGE : ACCUEIL
 # ---------------------------------------------------------
-if page == "🏠 Accueil":
-    st.header("🎯 Objectif du simulateur")
+if page == "ACCUEIL":
+    st.header("Objectif du simulateur")
     st.write("""
     Cet outil permet d'évaluer **la pertinence économique et stratégique** d'une relocalisation 
     de la production de pCAM en Europe à partir du recyclage des batteries électriques.
@@ -138,14 +137,14 @@ if page == "🏠 Accueil":
     - Cycle ouvert (métaux minés) vs cycle fermé (métaux recyclés)  
     - Rentabilité pour un OEM ou une Gigafactory
     
-    👉 L'objectif final : **décider si la relocalisation européenne est viable**.
+    L'objectif final : **décider si la relocalisation européenne est viable**.
     """)
 
 # ---------------------------------------------------------
 # PAGE : SCÉNARIOS
 # ---------------------------------------------------------
-elif page == "📦 Scénarios":
-    st.header("📦 Scénarios de comparaison")
+elif page == "SCÉNARIOS":
+    st.header("Scénarios de comparaison")
     st.write("""
     Trois scénarios principaux sont analysés :
 
@@ -167,8 +166,8 @@ elif page == "📦 Scénarios":
 # ---------------------------------------------------------
 # PAGE : PARAMÈTRES TECHNIQUES
 # ---------------------------------------------------------
-elif page == "⚙️ Paramètres techniques":
-    st.header("⚙️ Paramètres techniques")
+elif page == "PARAMÈTRES TECHNIQUES":
+    st.header("Paramètres techniques")
     st.write("""
     Tous les paramètres ont été définis dans la barre latérale.
     Utilisez-la pour modifier :
@@ -181,29 +180,29 @@ elif page == "⚙️ Paramètres techniques":
 # ---------------------------------------------------------
 # PAGE : ANALYSE ÉCONOMIQUE
 # ---------------------------------------------------------
-elif page == "💰 Analyse économique":
-    st.header("💰 Analyse économique")
+elif page == "ANALYSE ÉCONOMIQUE":
+    st.header("Analyse économique")
 
     mass_Li, mass_Ni, mass_Co = calculate_materials()
     value = calculate_value(mass_Li, mass_Ni, mass_Co)
     costs = calculate_costs()
 
-    st.subheader("📦 Matériaux récupérés")
+    st.subheader("Matériaux récupérés")
     st.write(f"Lithium récupéré : **{mass_Li/1000:.1f} tonnes**")
     st.write(f"Nickel récupéré : **{mass_Ni/1000:.1f} tonnes**")
     st.write(f"Cobalt récupéré : **{mass_Co/1000:.1f} tonnes**")
 
-    st.subheader("💰 Valeur totale récupérée")
+    st.subheader("Valeur totale récupérée")
     st.write(f"**{value:,.0f} €**")
 
-    st.subheader("💸 Coûts estimés")
+    st.subheader("Coûts estimés")
     st.write(f"**{costs:,.0f} €**")
 
 # ---------------------------------------------------------
 # PAGE : RÉSULTATS & RECOMMANDATION
 # ---------------------------------------------------------
-elif page == "📊 Résultats & Recommandation":
-    st.header("📊 Résultats")
+elif page == "RÉSULTATS & RECOMMANDATIONS":
+    st.header("Résultats")
     mass_Li, mass_Ni, mass_Co = calculate_materials()
     value = calculate_value(mass_Li, mass_Ni, mass_Co)
     costs = calculate_costs()
@@ -217,8 +216,8 @@ elif page == "📊 Résultats & Recommandation":
 # ---------------------------------------------------------
 # PAGE : CONCLUSION
 # ---------------------------------------------------------
-elif page == "🧩 Conclusion":
-    st.header("🧩 Conclusion")
+elif page == "CONCLUSION":
+    st.header("Conclusion")
     st.write("""
     Ce simulateur montre qu'une relocalisation de la production de pCAM dépend fortement :
     
@@ -232,5 +231,5 @@ elif page == "🧩 Conclusion":
     - l'évolution des prix du marché  
     - les objectifs EU Battery Regulation  
 
-    👉 Prêt à intégrer des données réelles pour une étude complète.
+    Prêt à intégrer des données réelles pour une étude complète.
     """)
