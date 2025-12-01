@@ -1,234 +1,204 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 
-# ---------------------------------------------------------
-# CONFIGURATION DE LA PAGE
-# ---------------------------------------------------------
 st.set_page_config(
-    page_title="EU pCAM Decision Tool",
+    page_title="European pCAM Reshoring Decision Tool",
     layout="wide"
 )
 
-# ---------------------------------------------------------
-# TITRE PRINCIPAL
-# ---------------------------------------------------------
-st.title("European pCAM Reshoring Decision Tool")
-st.caption("Version 1.0 — Prototype pour décision stratégique Verkor / IFP School")
+# HEADER
+st.markdown("""
+# European pCAM Reshoring Decision Tool  
+Version 1.0 — Prototype pour décision stratégique Verkor / IFP School
+""")
 
-# ---------------------------------------------------------
-# SIDEBAR - NAVIGATION
-# ---------------------------------------------------------
+st.markdown("""
+Ce logiciel d’aide à la décision permet d’évaluer la pertinence d’une relocalisation européenne
+de la production de pré-cathode active material (pCAM), basée sur le recyclage de “black mass”.
+Il intègre des scénarios techniques, économiques, industriels et géopolitiques.
+""")
 
-page = st.sidebar.radio(
-    "ALLER À :",
-    [
-        "ACCUEIL",
-        "SCÉNARIOS",
-        "PARAMÈTRES TECHNIQUES",
-        "ANALYSE ÉCONOMIQUE",
-        "RÉSULTATS & RECOMMENDATIONS",
-        "CONCLUSION"
-    ]
+# LIENS VERS LES SECTIONS
+st.markdown("## Aller à :")
+st.markdown("""
+- **ACCUEIL**
+- **SCÉNARIOS**
+- **PARAMÈTRES TECHNIQUES**
+- **ANALYSE ÉCONOMIQUE**
+- **RÉSULTATS**
+- **CONCLUSION**
+""")
+
+st.info("Utilisez le menu latéral pour naviguer entre les pages.")
+
+import streamlit as st
+
+st.title("SCÉNARIOS")
+
+st.markdown("""
+Cette section permet de configurer les grands scénarios prospectifs pour l’Europe,
+en lien avec la production de black mass, le recyclage, et la fabrication de pCAM.
+""")
+
+st.subheader("Choix du scénario global")
+
+scenario = st.selectbox(
+    "Scénario prospectif",
+    ["Optimiste 2035", "Réaliste 2035", "Conservateur 2035"]
 )
 
-# ---------------------------------------------------------
-# VARIABLES GLOBALES — Tout regrouper ici
-# ---------------------------------------------------------
-
-st.sidebar.title("PARAMÈTRES RAPIDES")
-
-# Nombre de batteries recyclées
-batteries = st.sidebar.number_input(
-    "Nombre de batteries recyclées/an",
-    min_value=1000,
-    max_value=1_000_000,
-    value=10000,
-    step=1000
-)
-
-# Masse moyenne d'une batterie (kg)
-battery_mass = st.sidebar.slider(
-    "Masse moyenne d'une batterie (kg)",
-    100, 700, 450
-)
-
-# Teneur en matériaux (% massiques)
-st.sidebar.subheader("Composition moyenne (%)")
-perc_Li = st.sidebar.slider("Lithium (%)", 0.5, 5.0, 1.5)
-perc_Ni = st.sidebar.slider("Nickel (%)", 5.0, 20.0, 10.0)
-perc_Co = st.sidebar.slider("Cobalt (%)", 1.0, 10.0, 4.0)
-
-# Rendements de récupération
-st.sidebar.subheader("Rendements (%)")
-yield_Li = st.sidebar.slider("Rendement Li (%)", 20, 95, 70)
-yield_Ni = st.sidebar.slider("Rendement Ni (%)", 40, 98, 90)
-yield_Co = st.sidebar.slider("Rendement Co (%)", 40, 98, 92)
-
-# Prix des métaux (€ / tonne)
-st.sidebar.subheader("Prix des métaux (€ / tonne)")
-price_Li = st.sidebar.number_input("Prix Lithium", value=15000)
-price_Ni = st.sidebar.number_input("Prix Nickel", value=18000)
-price_Co = st.sidebar.number_input("Prix Cobalt", value=30000)
-
-# Scénario
-scenario = st.sidebar.selectbox(
-    "Scénario géographique",
-    ["Europe", "Chine"]
-)
-
-# ---------------------------------------------------------
-# CALCULS — matériaux récupérés et valeur
-# ---------------------------------------------------------
-
-def calculate_materials():
-    total_mass = batteries * battery_mass
-
-    mass_Li = total_mass * (perc_Li/100) * (yield_Li/100)
-    mass_Ni = total_mass * (perc_Ni/100) * (yield_Ni/100)
-    mass_Co = total_mass * (perc_Co/100) * (yield_Co/100)
-
-    return mass_Li, mass_Ni, mass_Co
-
-
-def calculate_value(mass_Li, mass_Ni, mass_Co):
-    value = (
-        mass_Li/1000 * price_Li +
-        mass_Ni/1000 * price_Ni +
-        mass_Co/1000 * price_Co
-    )
-    return value
-
-
-def calculate_costs():
-    """
-    Exemple : coûts approximatifs (placeholder)
-    À remplacer par vos valeurs réelles.
-    """
-    if scenario == "Europe":
-        capex = 120_000_000
-        opex = 500 * batteries
-    else:
-        capex = 70_000_000
-        opex = 350 * batteries
-    
-    return capex + opex
-
-
-def recommendation(value, costs):
-    if value > costs:
-        return "🟢 Recommandation : La relocalisation est économiquement viable."
-    else:
-        return "🔴 Recommandation : La relocalisation n'est PAS rentable dans ce scénario."
-
-
-# ---------------------------------------------------------
-# PAGE : ACCUEIL
-# ---------------------------------------------------------
-if page == "ACCUEIL":
-    st.header("Objectif du simulateur")
-    st.write("""
-    Cet outil permet d'évaluer **la pertinence économique et stratégique** d'une relocalisation 
-    de la production de pCAM en Europe à partir du recyclage des batteries électriques.
-    
-    Il compare différents scénarios :
-    - Recyclage et hydrométallurgie en Europe vs Chine  
-    - Cycle ouvert (métaux minés) vs cycle fermé (métaux recyclés)  
-    - Rentabilité pour un OEM ou une Gigafactory
-    
-    L'objectif final : **décider si la relocalisation européenne est viable**.
+if scenario == "Optimiste 2035":
+    st.markdown("""
+    **Hypothèses principales :**
+    - Forte croissance du VE  
+    - Taux de collecte EOL élevé  
+    - Rendements de recyclage améliorés  
+    - Forte disponibilité en black mass  
+    - Investissements industriels élevés  
+    """)
+elif scenario == "Réaliste 2035":
+    st.markdown("""
+    **Hypothèses principales :**
+    - Croissance VE modérée  
+    - Recyclage maîtrisé mais limité par volumes  
+    - Rendements stables  
+    - Compétition accrue sur les matières  
+    """)
+else:  
+    st.markdown("""
+    **Hypothèses principales :**
+    - Retards industriels  
+    - Volumes faibles  
+    - Forte concurrence sur les imports  
+    - Rentabilité incertaine en Europe  
     """)
 
-# ---------------------------------------------------------
-# PAGE : SCÉNARIOS
-# ---------------------------------------------------------
-elif page == "SCÉNARIOS":
-    st.header("Scénarios de comparaison")
-    st.write("""
-    Trois scénarios principaux sont analysés :
+import streamlit as st
 
-    1. **Cycle ouvert – Chine**
-       - Importation de métaux neufs
-       - Exportation de la black mass
-       - Forte dépendance extérieure
+st.title("PARAMÈTRES TECHNIQUES")
 
-    2. **Cycle fermé – Europe**
-       - Recyclage local
-       - Hydrométallurgie + fabrication de pCAM
-       - Réduction de la dépendance stratégique
+st.markdown("Définissez ici les paramètres techniques utilisés dans le modèle.")
 
-    3. **Cycle hybride**
-       - Black mass envoyée en Europe
-       - Hydrométallurgie locale
-    """)
+col1, col2, col3 = st.columns(3)
 
-# ---------------------------------------------------------
-# PAGE : PARAMÈTRES TECHNIQUES
-# ---------------------------------------------------------
-elif page == "PARAMÈTRES TECHNIQUES":
-    st.header("Paramètres techniques")
-    st.write("""
-    Tous les paramètres ont été définis dans la barre latérale.
-    Utilisez-la pour modifier :
-    - le nombre de batteries  
-    - la masse moyenne  
-    - la composition matériaux  
-    - les rendements de récupération  
-    """)
+with col1:
+    nb_batteries = st.number_input("Nombre de batteries recyclées / an", 0, 20000000, 1000000)
+    masse_moyenne = st.number_input("Masse moyenne d'une batterie (kg)", 50, 800, 250)
 
-# ---------------------------------------------------------
-# PAGE : ANALYSE ÉCONOMIQUE
-# ---------------------------------------------------------
-elif page == "ANALYSE ÉCONOMIQUE":
-    st.header("Analyse économique")
+with col2:
+    fraction_black_mass = st.slider("Fraction de black mass dans la batterie (%)", 5, 40, 20)
+    rendement_recyclage = st.slider("Rendement global du recyclage (%)", 40, 95, 70)
 
-    mass_Li, mass_Ni, mass_Co = calculate_materials()
-    value = calculate_value(mass_Li, mass_Ni, mass_Co)
-    costs = calculate_costs()
+with col3:
+    teneur_Ni = st.slider("Teneur en Nickel (%)", 0, 50, 25)
+    teneur_Co = st.slider("Teneur en Cobalt (%)", 0, 50, 12)
+    teneur_Li = st.slider("Teneur en Lithium (%)", 0, 20, 7)
 
-    st.subheader("Matériaux récupérés")
-    st.write(f"Lithium récupéré : **{mass_Li/1000:.1f} tonnes**")
-    st.write(f"Nickel récupéré : **{mass_Ni/1000:.1f} tonnes**")
-    st.write(f"Cobalt récupéré : **{mass_Co/1000:.1f} tonnes**")
+st.session_state["inputs"] = {
+    "nb_batteries": nb_batteries,
+    "masse_moyenne": masse_moyenne,
+    "fraction_black_mass": fraction_black_mass / 100,
+    "rendement": rendement_recyclage / 100,
+    "Ni": teneur_Ni / 100,
+    "Co": teneur_Co / 100,
+    "Li": teneur_Li / 100,
+}
 
-    st.subheader("Valeur totale récupérée")
-    st.write(f"**{value:,.0f} €**")
+import streamlit as st
 
-    st.subheader("Coûts estimés")
-    st.write(f"**{costs:,.0f} €**")
+st.title("ANALYSE ÉCONOMIQUE")
 
-# ---------------------------------------------------------
-# PAGE : RÉSULTATS & RECOMMANDATION
-# ---------------------------------------------------------
-elif page == "RÉSULTATS & RECOMMANDATIONS":
-    st.header("Résultats")
-    mass_Li, mass_Ni, mass_Co = calculate_materials()
-    value = calculate_value(mass_Li, mass_Ni, mass_Co)
-    costs = calculate_costs()
+st.markdown("Définissez ici les hypothèses économiques pour le modèle.")
 
-    st.metric("Valeur totale des métaux récupérés", f"{value:,.0f} €")
-    st.metric("Coûts estimés", f"{costs:,.0f} €")
+col1, col2 = st.columns(2)
 
-    st.subheader("🔍 Recommandation automatique")
-    st.write(recommendation(value, costs))
+with col1:
+    prix_Ni = st.number_input("Prix du Nickel (€/kg)", 5, 200, 22)
+    prix_Co = st.number_input("Prix du Cobalt (€/kg)", 5, 200, 35)
+    prix_Li = st.number_input("Prix du Lithium (€/kg)", 5, 200, 45)
 
-# ---------------------------------------------------------
-# PAGE : CONCLUSION
-# ---------------------------------------------------------
-elif page == "CONCLUSION":
-    st.header("Conclusion")
-    st.write("""
-    Ce simulateur montre qu'une relocalisation de la production de pCAM dépend fortement :
-    
-    - du **volume de batteries disponibles**  
-    - du **rendement des procédés européens**  
-    - des **prix des métaux critiques**  
-    - des **coûts industriels en Europe**  
+with col2:
+    capex_europe = st.number_input("CAPEX usine Europe (M€)", 10, 2000, 600)
+    opex_europe = st.number_input("OPEX Europe (€/t)", 1000, 20000, 4500)
+    energie_europe = st.number_input("Coût énergie Europe (€/MWh)", 20, 300, 120)
 
-    Le modèle peut être affiné avec :
-    - les vraies données industrielles Verkor/IFPEN  
-    - l'évolution des prix du marché  
-    - les objectifs EU Battery Regulation  
+st.session_state["eco"] = {
+    "prix_Ni": prix_Ni,
+    "prix_Co": prix_Co,
+    "prix_Li": prix_Li,
+    "capex": capex_europe,
+    "opex": opex_europe,
+    "energie": energie_europe,
+}
 
-    Prêt à intégrer des données réelles pour une étude complète.
-    """)
+import streamlit as st
+
+st.title("RÉSULTATS")
+
+if "inputs" not in st.session_state or "eco" not in st.session_state:
+    st.error("Veuillez remplir les sections 'PARAMÈTRES TECHNIQUES' et 'ANALYSE ÉCONOMIQUE'.")
+    st.stop()
+
+a = st.session_state["inputs"]
+e = st.session_state["eco"]
+
+# CALCULS
+tonnes_batteries = a["nb_batteries"] * a["masse_moyenne"] / 1000
+tonnes_blackmass = tonnes_batteries * a["fraction_black_mass"]
+tonnes_metaux = {
+    "Ni": tonnes_blackmass * a["Ni"] * a["rendement"],
+    "Co": tonnes_blackmass * a["Co"] * a["rendement"],
+    "Li": tonnes_blackmass * a["Li"] * a["rendement"]
+}
+revenu = (tonnes_metaux["Ni"] * e["prix_Ni"]
+         + tonnes_metaux["Co"] * e["prix_Co"]
+         + tonnes_metaux["Li"] * e["prix_Li"])
+
+# AFFICHAGE
+st.subheader("Volumes calculés")
+st.write(f"- Batteries : **{tonnes_batteries:,.0f} t/an**")
+st.write(f"- Black mass : **{tonnes_blackmass:,.0f} t/an**")
+st.write(f"- Nickel récupéré : **{tonnes_metaux['Ni']:,.0f} t/an**")
+st.write(f"- Cobalt récupéré : **{tonnes_metaux['Co']:,.0f} t/an**")
+st.write(f"- Lithium récupéré : **{tonnes_metaux['Li']:,.0f} t/an**")
+
+st.subheader("Résultats économiques")
+st.write(f"Revenu total estimé : **{revenu/1e6:.2f} M€ / an**")
+
+# RECOMMANDATION
+st.subheader("Recommandation stratégique")
+
+if revenu > e["capex"] * 1e6 / 10:
+    st.success("La relocalisation européenne apparaît **économiquement favorable**.")
+else:
+    st.warning("La relocalisation européenne est **risquée économiquement** dans ce scénario.")
+
+import streamlit as st
+
+st.title("CONCLUSION")
+
+st.markdown("""
+### Synthèse stratégique
+
+Ce prototype d’outil permet d’évaluer les conditions dans lesquelles
+une relocalisation européenne de la production de pCAM devient réaliste
+et économiquement pertinente.
+
+### Points clés à retenir
+
+- Les volumes européens de black mass seront critiques avant 2030  
+- La rentabilité dépend fortement des prix Ni / Co / Li  
+- Les coûts énergétiques européens restent un frein majeur  
+- Les politiques publiques et réglementations (EU Battery Regulation) seront déterminantes  
+- La concurrence asiatique restera forte au niveau pCAM/CAM  
+
+### Prochaines étapes
+- Intégration de données industrielles réelles  
+- Ajout d’analyses ACV / carbone  
+- Modèle économique détaillé  
+- Module géopolitique (export de black mass)
+""")
+
+streamlit
+plotly
+pandas
+numpy
