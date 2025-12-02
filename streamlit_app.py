@@ -1,119 +1,248 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 
-# --- Configuration de la Page ---
-st.set_page_config(
-    layout="wide", 
-    page_title="Simulateur pCAM Européen"
-)
+# --- CONSTANTES ET HYPOTHÈSES DE BASE ---
+# Ces valeurs sont des placeholders et doivent être affinées par la recherche de votre équipe.
 
-# --- Constantes du Modèle ---
-# Hypothèses de base (à affiner avec les données réelles)
-CONVERSION_BM_PCAM = 0.45  # 45% de la Black Mass devient pCAM
-PRIX_PCAM_TONNE = 25000  # Prix de vente estimé du pCAM (€/tonne)
+# Constantes Techniques
+CONVERSION_BM_PCAM = 0.45   # Fraction de la Black Mass transformable en pCAM utile
+ANCIEN_TAUX_RECUP_NI = 0.90 # Taux de récupération de Nickel de référence (cible 2027)
 
-# --- Titre et Introduction ---
-st.title("🔋 Simulateur : Relocalisation pCAM via Recyclage Européen")
-st.markdown("### Évaluation Stratégique du Cycle Fermé : Europe vs Asie (Horizon 2030-2035)")
+# Constantes Économiques (en €/tonne)
+PRIX_PCAM_TONNE_VENTE = 25000.0   # Prix de vente de référence pour le pCAM
+COUT_PCAM_REF_ASIE = 21000.0      # Coût unitaire du pCAM importé (cycle ouvert / référence Asie)
+CAPEX_USINE_TONNE_AN = 1500.0     # CAPEX annualisé pour l'usine d'hydrométallurgie/pCAM par tonne de BM traitée
+KWH_PAR_TONNE_BM = 5500.0         # Consommation électrique estimée par tonne de Black Mass traitée
 
-st.header("1. Paramètres de Simulation (Inputs)")
+# Constantes Réglementaires (pour le Recycled Content)
+COUT_NON_CONFORMITE = 5000.0      # Pénalité hypothétique si les cibles ne sont pas atteintes (€/tonne)
+CIBLE_REC_CONTENT_NI_2031 = 0.06  # 6% de contenu recyclé en Nickel d'ici 2031 
+CIBLE_REC_CONTENT_LI_2031 = 0.06  # 6% de contenu recyclé en Lithium d'ici 2031 
+
+
+# --- FONCTION DE MODÉLISATION DU COÛT ---
+def run_pcam_model(volume_bm, eff_ni, eff_li, cost_energy, cost_bm, cap_usine):
+    
+    # 1. CALCULS TECHNIQUES DE PRODUCTION
+    pcam_output_tonnes = volume_bm * CONVERSION_BM_PCAM * 1000 # Conversion en tonnes
+    
+    # 2. CALCULS ÉCONOMIQUES (CYCLE FERMÉ - EUROPE)
+    
+    # Coûts de traitement (OPEX)
+    cost_energy_total = volume_bm * 1000 * KWH_PAR_TONNE_BM * cost_energy # Coût total de l'énergie
+    
+    # Coût d'achat de la matière première (Black Mass)
+    cost_bm_total = volume_bm * 1000 * cost_bm
+    
+    # Coût d'investissement annualisé (CAPEX)
+    cost_capex_total = volume_bm * 1000 * cap_usine
+    
+    # Coût total (OPEX + CAPEX)
+    cost_total_eu = cost_energy_total + cost_bm_total + cost_capex_total
+    
+    # Coût unitaire par tonne de pCAM produite
+    if pcam_output_tonnes > 0:
+        cost_pcam_unit_eu = cost_total_eu / pcam_output_tonnes
+    else:
+        cost_pcam_unit_eu = 0.0
+        
+    # 3. ANALYSE REGLEMENTAIRE
+    
+    # Impact de l'efficacité de récupération sur la quantité de métaux disponibles
+    ni_recovered_tonnes = volume_bm * 1000 * 0.05 * eff_ni # Hypothèse: 5% de Ni dans la BM
+    li_recovered_tonnes = volume_bm * 1000 * 0.01 * eff_li # Hypothèse: 1% de Li dans la BM
+    
+    # Pénalité de non-conformité au contenu recyclé (si la production est faible)
+    production_batterie_cible = pcam_output_tonnes * 10 # Estimation pour le marché
+    
+    # Simplification : vérification rapide du taux de Ni recyclé
+    taux_recyclage_ni = ni_recovered_tonnes / production_batterie_cible if production_batterie_cible > 0 else 0
+    
+    penalite_reglementaire = 0.0
+    if taux_recyclage_ni < CIBLE_REC_CONTENT_NI_2031:
+        penalite_reglementaire = COUT_NON_CONFORMITE * production_batterie_cible
+        
+    # 4. RENTABILITÉ FINALE
+    revenue_total = pcam_output_tonnes * PRIX_PCAM_TONNE_VENTE
+    marge_brute = revenue_total - cost_total_eu - penalite_reglementaire
+    
+    return pcam_output_tonnes, cost_pcam_unit_eu, cost_total_eu, revenue_total, marge_brute, taux_recyclage_ni
+
+# --- CONFIGURATION DE L'APPLICATION STREAMLIT ---
+
+st.set_page_config(layout="wide", page_title="SIMULATEUR PCAM EUROPEEN")
+
+st.title("SIMULATEUR : RELOCALISATION PCAM VIA RECYCLAGE EUROPEEN")
+st.markdown("### ÉVALUATION STRATÉGIQUE DU CYCLE FERMÉ : EUROPE VS ASIE (HORIZON 2030-2035)")
 st.markdown("---")
 
 
-# --- 2. Barre Latérale (Inputs) ---
-st.sidebar.header("🎯 Variables de Scénario")
+# --- BARRE LATERALE (INPUTS) ---
+st.sidebar.header("PARAMÈTRES DE SCÉNARIO")
 
-# Variables de Volume (Offre)
-st.sidebar.subheader("Offre de Matière (Black Mass)")
+# SECTION 1: VOLUME ET OFFRE (Technico-économique)
+st.sidebar.subheader("1. OFFRE DE MATIÈRE ET VOLUMES")
 eol_volume = st.sidebar.slider(
-    "Black Mass disponible en Europe (k tonnes/an, 2030)", 
+    "BLACK MASS DISPONIBLE EN EUROPE (K TONNES/AN)", 
     min_value=50, 
     max_value=500, 
     value=150, 
     step=25
 )
 
-# Variables Techniques (Rendements & Qualité)
-st.sidebar.subheader("Efficacité Technique et Coûts")
-taux_recup_ni = st.sidebar.slider(
-    "Taux de Récupération Ni visé (%)", 
-    min_value=80, 
-    max_value=95, 
-    value=90, 
-    step=1
-)
+# SECTION 2: EFFICACITÉ TECHNIQUE (Réglementaire)
+st.sidebar.subheader("2. EFFICACITÉ DE RÉCUPÉRATION (RÈGLEMENT UE)")
 
-# Variables Économiques (OPEX)
+st.sidebar.markdown("**Cibles 2031 (Taux de Récupération - En %)**")
+col_ni, col_li = st.sidebar.columns(2)
+
+with col_ni:
+    eff_ni = st.slider(
+        "NICKEL (Ni)", 
+        min_value=80, 
+        max_value=98, 
+        value=95, # Cible 2031: 95% pour Co & Ni [cite: 172]
+        step=1
+    ) / 100.0
+
+with col_li:
+    eff_li = st.slider(
+        "LITHIUM (Li)", 
+        min_value=40, 
+        max_value=85, 
+        value=80, # Cible 2031: 80% [cite: 172]
+        step=1
+    ) / 100.0
+
+
+# SECTION 3: COÛTS OPÉRATIONNELS ET FINANCIERS (Économique)
+st.sidebar.subheader("3. COÛTS UNITAIRES ET OPEX")
+
 cost_energy_eu = st.sidebar.number_input(
-    "Coût Énergétique Europe (€/kWh)", 
+    "COÛT ÉNERGÉTIQUE EUROPE (€/KWH)", 
     min_value=0.10, 
     max_value=0.30, 
     value=0.18, 
-    step=0.01
+    step=0.01, 
+    format="%.2f",
+    help="Facteur OPEX majeur pour l'hydrométallurgie."
 )
+
 cost_bm_achat = st.sidebar.number_input(
-    "Coût d'achat de la Black Mass (€/tonne)", 
+    "COÛT D'ACHAT DE LA BLACK MASS (€/TONNE)", 
     min_value=1500, 
     max_value=3000, 
     value=2200, 
     step=100
 )
 
+cap_usine = st.sidebar.number_input(
+    "CAPEX ANNUALISÉ USINE (€/TONNE BM TRAITÉE)", 
+    min_value=1000, 
+    max_value=3000, 
+    value=CAPEX_USINE_TONNE_AN, 
+    step=100,
+    help="Coût d'investissement de l'usine ramené à la tonne traitée annuellement."
+)
 
-# --- 3. Section de Calcul (Backend) ---
-
-def run_pcam_model(volume_bm, efficiency_ni, cost_energy, cost_bm):
-    # a. Calcul du potentiel pCAM
-    pcam_output = volume_bm * CONVERSION_BM_PCAM
-    
-    # b. Coût de la Black Mass traitée
-    # Simplification: coût d'achat BM + coût de traitement (énergie, etc.)
-    cost_bm_processed = (cost_bm + (cost_energy * 5000)) * volume_bm # 5000 kWh/tonne BM (Hypothèse)
-    
-    # c. Coût Unitaire pCAM Europe (Cycle Fermé)
-    cost_pcam_unit_eu = cost_bm_processed / (pcam_output * 1000)
-    
-    # d. Coût Unitaire Asie (Cycle Ouvert - Réf.)
-    # Hypothèse simple pour l'exemple
-    cost_pcam_unit_asia = 20000 
-    
-    # e. Marge et Rentabilité
-    revenue = pcam_output * PRIX_PCAM_TONNE
-    
-    return pcam_output, cost_pcam_unit_eu, cost_pcam_unit_asia, revenue
-
-pcam_pot, cost_eu, cost_asia, revenue_eu = run_pcam_model(
-    eol_volume, taux_recup_ni, cost_energy_eu, cost_bm_achat
+# --- EXÉCUTION DU MODÈLE ---
+pcam_pot, cost_eu, cost_total_eu, revenue_total, marge_brute, taux_rec_ni = run_pcam_model(
+    eol_volume, eff_ni, eff_li, cost_energy_eu, cost_bm_achat, cap_usine
 )
 
 
-# --- 4. Affichage des Résultats (Outputs) ---
-
-st.header("2. Résultats de l'Analyse Technico-Économique")
+# --- SECTION 1 : RÉSULTATS ÉCONOMIQUES CLÉS ---
+st.header("1. COMPARAISON TECHNICO-ÉCONOMIQUE (CYCLE FERMÉ VS OUVERT)")
 st.markdown("---")
 
-col_a, col_b, col_c = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
-with col_a:
+with col1:
     st.metric(
-        label="Potentiel de Production pCAM", 
-        value=f"{pcam_pot:,.0f} kt/an", 
+        label="PRODUCTION PCAM POTENTIELLE", 
+        value=f"{pcam_pot / 1000:,.1f} K TONNES/AN",
         help="Volume de pCAM produit annuellement par le scénario Européen."
     )
 
-with col_b:
+with col2:
     st.metric(
-        label="Coût Unitaire pCAM (Cycle Fermé Europe)", 
-        value=f"{cost_eu:,.0f} €/tonne", 
+        label="COÛT UNITAIRE PCAM (EUROPE)", 
+        value=f"{cost_eu:,.0f} €/TONNE",
+        delta_color="inverse",
+        delta=f"VS RÉFÉRENCE ASIE ({COUT_PCAM_REF_ASIE:,.0f} €/TONNE)"
     )
 
-with col_c:
-    cost_diff = cost_asia - cost_eu
+with col3:
     st.metric(
-        label="Avantage Compétitif vs Asie (Cycle Ouvert)", 
-        value=f"{cost_diff:,.0f} €/tonne",
-        delta="Si positif, le coût Européen est plus bas."
+        label="MARGE BRUTE ANNUELLE DU PROJET", 
+        value=f"{marge_brute / 1000000:,.0f} M€",
     )
 
-st.subheader("Analyse de Sensibilité : Impact de l'Énergie sur la Compétitivité")
-st.bar_chart({"Europe (Simulé)": cost_eu, "Asie (Référence)": cost_asia})
+with col4:
+    st.metric(
+        label="POINT MORT (ESTIMÉ)", 
+        value=f"{cost_total_eu / revenue_total * 100:,.1f} %",
+        help="Pourcentage de capacité à atteindre pour couvrir les coûts totaux."
+    )
+
+st.markdown("---")
+
+# --- SECTION 2 : ANALYSE DE SENSIBILITÉ ET COÛT ---
+st.header("2. ANALYSE DE SENSIBILITÉ ET DE CONTRAINTE")
+st.markdown("---")
+
+df_couts = pd.DataFrame({
+    'COÛT': ['CYCLE FERMÉ EUROPE', 'CYCLE OUVERT ASIE (RÉFÉRENCE)'],
+    'VALEUR': [cost_eu, COUT_PCAM_REF_ASIE]
+})
+
+st.subheader("COÛT UNITAIRE PCAM : COMPARAISON EU/ASIE")
+st.bar_chart(df_couts.set_index('COÛT'))
+
+# Détail des coûts
+st.subheader("DÉTAIL DES COÛTS DU CYCLE FERMÉ (EUROPE)")
+df_detail_cout = pd.DataFrame({
+    'POSTE DE COÛT': ['ACHAT BLACK MASS', 'ÉNERGIE (OPEX)', 'INVESTISSEMENT (CAPEX)'],
+    'PART (€)': [cost_bm_achat * 1000, cost_energy_eu * 1000, cap_usine * 1000],
+    'POURCENTAGE (%)': [
+        (cost_bm_achat * 1000) / (cost_bm_achat * 1000 + cost_energy_eu * 1000 + cap_usine * 1000) * 100,
+        (cost_energy_eu * 1000) / (cost_bm_achat * 1000 + cost_energy_eu * 1000 + cap_usine * 1000) * 100,
+        (cap_usine * 1000) / (cost_bm_achat * 1000 + cost_energy_eu * 1000 + cap_usine * 1000) * 100
+    ]
+})
+st.dataframe(df_detail_cout.style.format({'PART (€)': "{:,.0f}", 'POURCENTAGE (%)': "{:,.1f}%"}))
+
+# --- SECTION 3 : INDICATEURS RÉGLEMENTAIRES ---
+st.header("3. CONFORMITÉ RÉGLEMENTAIRE (RÈGLEMENT UE SUR LES BATTERIES)")
+st.markdown("---")
+
+col_reg1, col_reg2 = st.columns(2)
+
+with col_reg1:
+    st.subheader("CIBLE DE CONTENU RECYCLÉ 2031")
+    
+    data = {
+        'MÉTAUX': ['NICKEL', 'LITHIUM'],
+        'CIBLE 2031': [CIBLE_REC_CONTENT_NI_2031, CIBLE_REC_CONTENT_LI_2031],
+        'TAUX ATTEINT (ESTIMATION)': [taux_rec_ni, CIBLE_REC_CONTENT_LI_2031 * 0.95] # Li simplifié
+    }
+    df_reg = pd.DataFrame(data)
+    st.dataframe(df_reg.style.format("{:.2%}"))
+
+with col_reg2:
+    st.subheader("EFFICACITÉ DE RÉCUPÉRATION")
+    
+    st.metric(
+        label="EFFICACITÉ DE RÉCUPÉRATION DU NICKEL", 
+        value=f"{eff_ni * 100:,.0f} %",
+        delta_color="normal",
+        delta=f"CIBLE UE 2031 : 95% [cite: 172]"
+    )
+    
+    st.metric(
+        label="EFFICACITÉ DE RÉCUPÉRATION DU LITHIUM", 
+        value=f"{eff_li * 100:,.0f} %",
+        delta_color="normal",
+        delta=f"CIBLE UE 2031 : 80% [cite: 172]"
+    )
