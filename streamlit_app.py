@@ -213,36 +213,36 @@ df_detail_cout = pd.DataFrame({
 })
 st.dataframe(df_detail_cout.style.format({'PART (€)': "{:,.0f}", 'POURCENTAGE (%)': "{:,.1f}%"}))
 
-# --- SECTION 3 : INDICATEURS RÉGLEMENTAIRES ---
-st.header("3. CONFORMITÉ RÉGLEMENTAIRE (RÈGLEMENT UE SUR LES BATTERIES)")
-st.markdown("---")
+# Dans la section CONSTANTES ET HYPOTHÈSES DE BASE, vérifiez que cette ligne est correcte :
+CAPEX_USINE_TONNE_AN = 1500.0     # Valeur numérique avec .0 pour être sûr
 
-col_reg1, col_reg2 = st.columns(2)
+# Dans la section sidebar :
+# Utiliser 'format="%.2f"' pour les décimales et 'format="%d"' pour les entiers si besoin
+cost_energy_eu = st.sidebar.number_input(
+    "COÛT ÉNERGÉTIQUE EUROPE (€/KWH)", 
+    min_value=0.10, 
+    max_value=0.30, 
+    value=0.18, 
+    step=0.01, 
+    format="%.2f", # Maintenu avec formatage si vous voulez deux décimales
+    help="Facteur OPEX majeur pour l'hydrométallurgie."
+)
 
-with col_reg1:
-    st.subheader("CIBLE DE CONTENU RECYCLÉ 2031")
-    
-    data = {
-        'MÉTAUX': ['NICKEL', 'LITHIUM'],
-        'CIBLE 2031': [CIBLE_REC_CONTENT_NI_2031, CIBLE_REC_CONTENT_LI_2031],
-        'TAUX ATTEINT (ESTIMATION)': [taux_rec_ni, CIBLE_REC_CONTENT_LI_2031 * 0.95] # Li simplifié
-    }
-    df_reg = pd.DataFrame(data)
-    st.dataframe(df_reg.style.format("{:.2%}"))
+cost_bm_achat = st.sidebar.number_input(
+    "COÛT D'ACHAT DE LA BLACK MASS (€/TONNE)", 
+    min_value=1500, 
+    max_value=3000, 
+    value=2200, 
+    step=100,
+    format="%d" # Forcer l'entier
+)
 
-with col_reg2:
-    st.subheader("EFFICACITÉ DE RÉCUPÉRATION")
-    
-    st.metric(
-        label="EFFICACITÉ DE RÉCUPÉRATION DU NICKEL", 
-        value=f"{eff_ni * 100:,.0f} %",
-        delta_color="normal",
-        delta=f"CIBLE UE 2031 : 95% [cite: 172]"
-    )
-    
-    st.metric(
-        label="EFFICACITÉ DE RÉCUPÉRATION DU LITHIUM", 
-        value=f"{eff_li * 100:,.0f} %",
-        delta_color="normal",
-        delta=f"CIBLE UE 2031 : 80% [cite: 172]"
-    )
+cap_usine = st.sidebar.number_input(
+    "CAPEX ANNUALISÉ USINE (€/TONNE BM TRAITÉE)", 
+    min_value=1000, 
+    max_value=3000, 
+    value=1500, # CAPEX_USINE_TONNE_AN était 1500.0, valeur initiale rétablie
+    step=100,
+    format="%d", # Forcer l'entier
+    help="Coût d'investissement de l'usine ramené à la tonne traitée annuellement."
+)
